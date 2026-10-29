@@ -59,6 +59,13 @@ test('wizard, libraries, and sab queue', async () => {
     assert.equal(status.data.needsSetup, true)
     assert.equal((await request(url, '/api/dashboard')).status, 401)
 
+    const shortPassword = await request(url, '/api/setup', {
+      method: 'POST',
+      json: { username: 'Ada', password: '12345' },
+    })
+    assert.equal(shortPassword.status, 400)
+    assert.equal(shortPassword.data.error, 'Password must be at least 6 characters.')
+
     const setup = await request(url, '/api/setup', {
       method: 'POST',
       json: {

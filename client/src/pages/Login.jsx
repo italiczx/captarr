@@ -40,8 +40,12 @@ export function Login() {
           <label className="field" htmlFor="username">Username</label>
           <input
             id="username"
+            type="text"
             autoFocus
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             value={username}
             onChange={(event) => setUsername(event.target.value)}
           />

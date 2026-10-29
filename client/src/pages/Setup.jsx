@@ -87,8 +87,8 @@ export function Setup() {
         setError('Username must be 2–32 characters: letters, numbers, dot, dash, or underscore.')
         return
       }
-      if (account.password.length < 8) {
-        setError('Password must be at least 8 characters.')
+      if (account.password.length < 6) {
+        setError('Password must be at least 6 characters.')
         return
       }
       if (account.password !== account.confirm) {
@@ -219,8 +219,12 @@ export function Setup() {
               <label className="field" htmlFor="username">Username</label>
               <input
                 id="username"
+                type="text"
                 autoFocus
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={account.username}
                 onChange={(event) => {
                   resetFeedback()

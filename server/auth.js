@@ -36,8 +36,8 @@ export function assertUsername(username) {
 }
 
 export function assertPassword(password) {
-  if (typeof password !== 'string' || password.length < 8 || password.length > 200) {
-    throw new HttpError(400, 'Password must be at least 8 characters.')
+  if (typeof password !== 'string' || password.length < 6 || password.length > 200) {
+    throw new HttpError(400, 'Password must be at least 6 characters.')
   }
 }
 
