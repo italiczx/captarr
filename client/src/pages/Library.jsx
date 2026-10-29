@@ -595,6 +595,9 @@ function Detail({ service, id }) {
                 <Fact label="Path" value={item.path} path />
               </dl>
               <div className="page-actions">
+                {data.plexUrl ? (
+                  <a className="button" href={data.plexUrl} target="_blank" rel="noreferrer">Open in Plex</a>
+                ) : null}
                 <button type="button" onClick={automaticSearch} disabled={autoBusy}>
                   {autoBusy ? 'Starting…' : 'Automatic search'}
                 </button>

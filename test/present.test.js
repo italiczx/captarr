@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
-import { mediaUrl, normalizeBaseUrl, sabApiUrl, safeMediaPath } from '../server/upstream.js'
+import { mediaUrl, normalizeBaseUrl, plexItemUrl, sabApiUrl, safeMediaPath } from '../server/upstream.js'
 import { pickRecent, presentSabHistory, presentSabQueue, presentSeries } from '../server/present.js'
 import { HttpError } from '../server/errors.js'
 
@@ -28,6 +28,30 @@ describe('host urls', () => {
 
     const prefixed = mediaUrl('http://192.168.1.10:8989/sonarr', '/sonarr/MediaCover/3/poster.jpg', 'secret')
     assert.equal(prefixed.pathname, '/sonarr/MediaCover/3/poster.jpg')
+  })
+
+  test('builds a plex search link from a server address', () => {
+    const bear = { title: 'The Bear', year: 2022 }
+    assert.equal(
+      plexItemUrl('http://192.168.1.10:32400', bear),
+      'http://192.168.1.10:32400/web/index.html#!/search?query=The%20Bear',
+    )
+    assert.equal(
+      plexItemUrl('http://192.168.1.10:32400/web', bear),
+      'http://192.168.1.10:32400/web/index.html#!/search?query=The%20Bear',
+    )
+    assert.equal(
+      plexItemUrl('http://192.168.1.10:32400/web/index.html', bear),
+      'http://192.168.1.10:32400/web/index.html#!/search?query=The%20Bear',
+    )
+    assert.equal(
+      plexItemUrl('https://app.plex.tv/desktop', bear),
+      'https://app.plex.tv/desktop/#!/search?query=The%20Bear',
+    )
+    assert.equal(
+      plexItemUrl('https://app.plex.tv', { title: 'Past Lives' }),
+      'https://app.plex.tv/desktop/#!/search?query=Past%20Lives',
+    )
   })
 
   test('rejects image paths that leave MediaCover', () => {

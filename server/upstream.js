@@ -27,6 +27,31 @@ export function normalizeBaseUrl(input) {
   return url.toString().replace(/\/+$/, '')
 }
 
+export function plexItemUrl(baseUrl, item) {
+  const title = String(item?.title || '').trim()
+  if (!title) return ''
+  return `${plexWebPage(baseUrl)}#!/search?query=${encodeURIComponent(title)}`
+}
+
+function plexWebPage(baseUrl) {
+  const url = new URL(baseUrl)
+  let path = url.pathname.replace(/\/+$/, '')
+  if (url.hostname.toLowerCase() === 'app.plex.tv') {
+    if (!path || path === '/') path = '/desktop'
+    url.pathname = path
+    url.search = ''
+    url.hash = ''
+    return `${url.toString().replace(/\/+$/, '')}/`
+  }
+  if (!path.endsWith('/index.html')) {
+    path = path.endsWith('/web') ? `${path}/index.html` : `${path}/web/index.html`
+  }
+  url.pathname = path
+  url.search = ''
+  url.hash = ''
+  return url.toString()
+}
+
 export function normalizeApiKey(input) {
   const key = String(input ?? '').trim()
   if (!key) throw new HttpError(400, 'API key is required.')

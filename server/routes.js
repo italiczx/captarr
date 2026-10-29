@@ -14,8 +14,8 @@ import {
   queueTotal,
   seriesCounts,
 } from './present.js'
-import { SERVICE_IDS, SERVICE_LABELS, isConfigured, publicConnection } from './store.js'
-import { arrRequest, fetchMedia, normalizeApiKey, normalizeBaseUrl, probe, sabRequest, safeMediaPath } from './upstream.js'
+import { CONNECTION_IDS, SERVICE_IDS, SERVICE_LABELS, isConfigured, publicConnection } from './store.js'
+import { arrRequest, fetchMedia, normalizeApiKey, normalizeBaseUrl, plexItemUrl, probe, sabRequest, safeMediaPath } from './upstream.js'
 
 function wrap(handler) {
   return (req, res, next) => {
@@ -69,8 +69,14 @@ function requireNzo(value) {
   return String(value)
 }
 
+function plexLink(store, item) {
+  const baseUrl = store.read().connections.plex?.baseUrl
+  if (!baseUrl) return null
+  return plexItemUrl(baseUrl, item) || null
+}
+
 function requireService(value) {
-  if (!SERVICE_IDS.includes(value)) throw new HttpError(400, 'Unknown service.')
+  if (!CONNECTION_IDS.includes(value)) throw new HttpError(400, 'Unknown service.')
   return value
 }
 
@@ -204,6 +210,7 @@ async function resolveApiKey(store, service, baseUrl, provided, allowStoredKey) 
 
 async function testConnection(store, body, allowStoredKey) {
   const service = requireService(body?.service)
+  if (service === 'plex') throw new HttpError(400, 'Plex only needs an address. There is nothing to test.')
   let baseUrl
   try {
     baseUrl = normalizeBaseUrl(body?.baseUrl)
@@ -220,21 +227,32 @@ function readSetupConnection(input, service) {
   if (input == null) return { baseUrl: '', apiKey: '' }
   const rawUrl = String(input.baseUrl || '').trim()
   const rawKey = String(input.apiKey || '').trim()
+  if (service === 'plex') {
+    if (!rawUrl) return { baseUrl: '', apiKey: '' }
+    return { baseUrl: parseBaseUrl(rawUrl, label), apiKey: '' }
+  }
   if (!rawUrl && !rawKey) return { baseUrl: '', apiKey: '' }
   if (!rawUrl || !rawKey) throw new HttpError(400, `${label} needs both a host and an API key.`)
-  let baseUrl
+  return { baseUrl: parseBaseUrl(rawUrl, label), apiKey: normalizeApiKey(rawKey) }
+}
+
+function parseBaseUrl(rawUrl, label) {
   try {
-    baseUrl = normalizeBaseUrl(rawUrl)
+    return normalizeBaseUrl(rawUrl)
   } catch (err) {
     throw new HttpError(err.status || 400, `${label}: ${err.message}`)
   }
-  return { baseUrl, apiKey: normalizeApiKey(rawKey) }
 }
 
 function saveConnection(store, service, body) {
   const label = SERVICE_LABELS[service]
   const rawUrl = String(body?.baseUrl || '').trim()
   const rawKey = String(body?.apiKey || '').trim()
+  if (service === 'plex') {
+    const next = rawUrl ? { baseUrl: parseBaseUrl(rawUrl, label), apiKey: '' } : { baseUrl: '', apiKey: '' }
+    store.update((data) => { data.connections.plex = next })
+    return publicConnection(next)
+  }
   if (!rawUrl && !rawKey) {
     const cleared = { baseUrl: '', apiKey: '' }
     store.update((data) => { data.connections[service] = cleared })
@@ -310,6 +328,7 @@ export function mountRoutes(app, { store, version }) {
       sabnzbd: readSetupConnection(req.body?.connections?.sabnzbd, 'sabnzbd'),
       sonarr: readSetupConnection(req.body?.connections?.sonarr, 'sonarr'),
       radarr: readSetupConnection(req.body?.connections?.radarr, 'radarr'),
+      plex: readSetupConnection(req.body?.connections?.plex, 'plex'),
     }
     const passwordHash = await hashPassword(req.body.password)
     const user = { username: req.body.username, passwordHash, tokenVersion: 1 }
@@ -368,6 +387,7 @@ export function mountRoutes(app, { store, version }) {
         sabnzbd: publicConnection(data.connections.sabnzbd),
         sonarr: publicConnection(data.connections.sonarr),
         radarr: publicConnection(data.connections.radarr),
+        plex: publicConnection(data.connections.plex),
       },
     })
   }))
@@ -597,7 +617,7 @@ function registerLibrary(app, store, service) {
         .map(presentEpisode)
         .sort((a, b) => a.seasonNumber - b.seasonNumber || a.episodeNumber - b.episodeNumber)
     }
-    res.json({ item, episodes })
+    res.json({ item, episodes, plexUrl: plexLink(store, item) })
   }))
 
   app.get(`/api/${service}/lookup`, wrap(async (req, res) => {

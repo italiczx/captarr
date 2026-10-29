@@ -24,12 +24,20 @@ const steps = [
     placeholder: 'http://192.168.1.10:7878',
     hint: 'Include http:// and a URL base if Radarr uses one.',
   },
+  {
+    id: 'plex',
+    label: 'Plex',
+    placeholder: 'http://192.168.1.10:32400',
+    hint: 'The address you open in a browser. A show or movie opens a Plex search for that title.',
+    addressOnly: true,
+  },
 ]
 
 const emptyConnections = {
   sabnzbd: { baseUrl: '', apiKey: '' },
   sonarr: { baseUrl: '', apiKey: '' },
   radarr: { baseUrl: '', apiKey: '' },
+  plex: { baseUrl: '', apiKey: '' },
 }
 
 export function Setup() {
@@ -69,6 +77,7 @@ export function Setup() {
           sabnzbd: connectionPayload(connections.sabnzbd),
           sonarr: connectionPayload(connections.sonarr),
           radarr: connectionPayload(connections.radarr),
+          plex: connectionPayload(connections.plex),
         },
       }
       const me = await api('/api/setup', { method: 'POST', json: body })
@@ -103,6 +112,14 @@ export function Setup() {
     const draft = connections[current.id]
     const hasUrl = draft.baseUrl.trim()
     const hasKey = draft.apiKey.trim()
+    if (current.addressOnly) {
+      if (step === steps.length - 1) await finish()
+      else {
+        setStep((value) => value + 1)
+        resetFeedback()
+      }
+      return
+    }
     if (!hasUrl && !hasKey) {
       if (step === steps.length - 1) await finish()
       else {
@@ -171,6 +188,7 @@ export function Setup() {
             sabnzbd: connectionPayload(nextConnections.sabnzbd),
             sonarr: connectionPayload(nextConnections.sonarr),
             radarr: connectionPayload(nextConnections.radarr),
+            plex: connectionPayload(nextConnections.plex),
           },
         },
       })
@@ -211,7 +229,9 @@ export function Setup() {
           <p className="lede">
             {current.id === 'account'
               ? 'One account for this dashboard. You can change the password later.'
-              : 'Use the address this server can reach. You can skip this and add it later.'}
+              : current.addressOnly
+                ? 'Opened in your browser, so use the address you would type yourself. You can skip this and add it later.'
+                : 'Use the address this server can reach. You can skip this and add it later.'}
           </p>
           <Banner>{error}</Banner>
           {current.id === 'account' ? (
@@ -256,7 +276,7 @@ export function Setup() {
             </>
           ) : (
             <>
-              <label className="field" htmlFor="host">Host</label>
+              <label className="field" htmlFor="host">{current.addressOnly ? 'Address' : 'Host'}</label>
               <input
                 id="host"
                 autoFocus
@@ -268,15 +288,19 @@ export function Setup() {
                 onChange={(event) => updateConnection('baseUrl', event.target.value)}
               />
               <p className="hint">{current.hint}</p>
-              <label className="field" htmlFor="apiKey">API key</label>
-              <input
-                id="apiKey"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                value={connections[current.id].apiKey}
-                onChange={(event) => updateConnection('apiKey', event.target.value)}
-              />
+              {current.addressOnly ? null : (
+                <>
+                  <label className="field" htmlFor="apiKey">API key</label>
+                  <input
+                    id="apiKey"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    value={connections[current.id].apiKey}
+                    onChange={(event) => updateConnection('apiKey', event.target.value)}
+                  />
+                </>
+              )}
               {notice ? <p className="notice">{notice}</p> : null}
             </>
           )}

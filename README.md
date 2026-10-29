@@ -42,10 +42,11 @@ On Synology, set `PUID` and `PGID` to the user that should own the data folder. 
 
 - **Dashboard** — SABnzbd speed, queue, time left, disk free, and download totals, plus series and movie counts and recent imports from Sonarr and Radarr.
 - **SABnzbd** — queue progress, pause, resume, remove, and history.
-- **Sonarr / Radarr** — browse the library, search, add, and remove a title with or without deleting files. A show or movie can start an automatic search or a manual search of indexer releases. On a show, a season can be searched on its own, and a downloaded episode file can be deleted.
-- **Settings** — change the password or reconnect an app.
+- **Sonarr / Radarr** — browse the library, search, add, and remove a title with or without deleting files. A show or movie can start an automatic search or a manual search of indexer releases. On a show, a season can be searched on its own, and a downloaded episode file can be deleted. With a Plex address set, the title page opens that title in Plex search.
+- **Plex** — an address only, saved in setup or Settings. Captarr does not call Plex.
+- **Settings** — change the password, reconnect an app, or set the Plex address.
 
-Host URLs need a scheme, for example `http://192.168.1.10:8989` or `http://192.168.1.10:8080/sabnzbd`. Use the address this container can reach, which may be different from the address you use in a browser.
+Host URLs need a scheme, for example `http://192.168.1.10:8989` or `http://192.168.1.10:8080/sabnzbd`. Use the address this container can reach, which may be different from the address you use in a browser. Plex is the address you open yourself, such as `http://192.168.1.10:32400`. A show or movie then links to `http://192.168.1.10:32400/web/index.html#!/search?query=Title`. `https://app.plex.tv/desktop` works the same way.
 
 Connections to your apps allow private LAN certificates. Finish setup before you expose the port beyond your network. Put HTTPS in front of it if it is reachable from outside.
 

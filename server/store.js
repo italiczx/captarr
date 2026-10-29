@@ -3,11 +3,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export const SERVICE_IDS = ['sabnzbd', 'sonarr', 'radarr']
+export const CONNECTION_IDS = [...SERVICE_IDS, 'plex']
 
 export const SERVICE_LABELS = {
   sabnzbd: 'SABnzbd',
   sonarr: 'Sonarr',
   radarr: 'Radarr',
+  plex: 'Plex',
 }
 
 function emptyConnections() {
@@ -15,6 +17,7 @@ function emptyConnections() {
     sabnzbd: { baseUrl: '', apiKey: '' },
     sonarr: { baseUrl: '', apiKey: '' },
     radarr: { baseUrl: '', apiKey: '' },
+    plex: { baseUrl: '', apiKey: '' },
   }
 }
 
@@ -46,7 +49,7 @@ export function createStore(dataDir) {
       throw new Error(`Config file is missing its session secret: ${file}`)
     }
     if (!data.connections || typeof data.connections !== 'object') data.connections = emptyConnections()
-    for (const id of SERVICE_IDS) {
+    for (const id of CONNECTION_IDS) {
       const current = data.connections[id] || {}
       data.connections[id] = {
         baseUrl: typeof current.baseUrl === 'string' ? current.baseUrl : '',

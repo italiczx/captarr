@@ -220,6 +220,58 @@ test('wizard, libraries, and sab queue', async () => {
   }
 })
 
+test('plex address opens a sonarr title in plex search', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'captarr-'))
+  const mock = await startMock()
+  const { server, url } = await listen(createApp({ dataDir: dir }))
+  const host = `http://127.0.0.1:${mock.port}`
+  try {
+    const setup = await request(url, '/api/setup', {
+      method: 'POST',
+      json: {
+        username: 'ada',
+        password: 's3cure-pass',
+        connections: {
+          sonarr: { baseUrl: `${host}/sonarr`, apiKey: 'test-key' },
+          radarr: { baseUrl: `${host}/radarr`, apiKey: 'test-key' },
+          plex: { baseUrl: 'http://192.168.1.20:32400' },
+        },
+      },
+    })
+    assert.equal(setup.status, 200)
+    const cookie = setup.cookie
+    const settings = await request(url, '/api/settings', { cookie })
+    assert.equal(settings.data.connections.plex.baseUrl, 'http://192.168.1.20:32400')
+    assert.equal(settings.data.connections.plex.hasApiKey, false)
+    const detail = await request(url, '/api/sonarr/series/1', { cookie })
+    assert.equal(detail.data.plexUrl, 'http://192.168.1.20:32400/web/index.html#!/search?query=The%20Bear')
+    const movie = await request(url, '/api/radarr/movies/1', { cookie })
+    assert.equal(movie.data.plexUrl, 'http://192.168.1.20:32400/web/index.html#!/search?query=Past%20Lives')
+    const saved = await request(url, '/api/settings/connections/plex', {
+      method: 'PUT',
+      cookie,
+      json: { baseUrl: 'https://app.plex.tv/desktop' },
+    })
+    assert.equal(saved.status, 200)
+    const linked = await request(url, '/api/sonarr/series/1', { cookie })
+    assert.equal(linked.data.plexUrl, 'https://app.plex.tv/desktop/#!/search?query=The%20Bear')
+    const removed = await request(url, '/api/settings/connections/plex', { method: 'DELETE', cookie })
+    assert.equal(removed.data.baseUrl, '')
+    const plain = await request(url, '/api/sonarr/series/1', { cookie })
+    assert.equal(plain.data.plexUrl, null)
+    const bad = await request(url, '/api/settings/connections/plex', {
+      method: 'PUT',
+      cookie,
+      json: { baseUrl: 'not a url' },
+    })
+    assert.equal(bad.status, 400)
+  } finally {
+    await close(server)
+    await close(mock.server)
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('skipped apps stay disconnected', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'captarr-'))
   const { server, url } = await listen(createApp({ dataDir: dir }))

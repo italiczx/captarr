@@ -22,6 +22,13 @@ const services = [
     placeholder: 'http://192.168.1.10:7878',
     hint: 'Include http:// and a URL base if Radarr uses one.',
   },
+  {
+    id: 'plex',
+    label: 'Plex',
+    placeholder: 'http://192.168.1.10:32400',
+    hint: 'Show and movie pages open a Plex search for that title. Use the address you open in a browser.',
+    addressOnly: true,
+  },
 ]
 
 export function Settings() {
@@ -73,7 +80,7 @@ function SettingsSkeleton() {
   return (
     <div aria-busy="true">
       <span className="sr-only">Loading</span>
-      {Array.from({ length: 4 }, (_, index) => (
+      {Array.from({ length: 5 }, (_, index) => (
         <section key={index} className="panel settings-block" aria-hidden="true">
           <Bone width="120px" height={16} />
           <Bone height={38} className="gap" />
@@ -190,7 +197,7 @@ function ServiceForm({ service, saved, onSaved }) {
       <form onSubmit={save}>
         <Banner>{error}</Banner>
         {notice ? <p className="notice">{notice}</p> : null}
-        <label className="field" htmlFor={`${service.id}-host`}>Host</label>
+        <label className="field" htmlFor={`${service.id}-host`}>{service.addressOnly ? 'Address' : 'Host'}</label>
         <input
           id={`${service.id}-host`}
           autoCapitalize="off"
@@ -204,20 +211,24 @@ function ServiceForm({ service, saved, onSaved }) {
           }}
         />
         <p className="hint">{service.hint}</p>
-        <label className="field" htmlFor={`${service.id}-key`}>API key</label>
-        <input
-          id={`${service.id}-key`}
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          placeholder={saved.hasApiKey ? 'Saved — leave blank to keep it' : ''}
-          value={apiKey}
-          onChange={(event) => setApiKey(event.target.value)}
-        />
+        {service.addressOnly ? null : (
+          <>
+            <label className="field" htmlFor={`${service.id}-key`}>API key</label>
+            <input
+              id={`${service.id}-key`}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder={saved.hasApiKey ? 'Saved — leave blank to keep it' : ''}
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+            />
+          </>
+        )}
         <div className="form-actions">
-          <button type="button" onClick={test} disabled={busy}>Test</button>
+          {service.addressOnly ? null : <button type="button" onClick={test} disabled={busy}>Test</button>}
           <button type="submit" className="primary" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
-          {saved.hasApiKey && !armed ? (
+          {(service.addressOnly ? saved.baseUrl : saved.hasApiKey) && !armed ? (
             <button type="button" className="danger" onClick={() => setArmed(true)}>Remove</button>
           ) : null}
           {armed ? (
