@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+.git
+scripts
+test
+**/*.test.js
+.DS_Store
+*.log
